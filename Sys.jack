@@ -36,7 +36,7 @@ class Sys {
         while (millis < duration) {
             let i = 0;
 
-            while (i < 600) { 
+            while (i < 300) { 
                 let i = i + 1;
             }
 
