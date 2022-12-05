@@ -1,0 +1,118 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+    static Array freeList;
+
+    /** Initializes the class. */
+    function void init() {
+        let freeList = 2048;
+        let freeList[0] = 14336;    // freeList.length = heapLength
+        let freeList[1] = null;     // freeList.next = null
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        var Array memory;
+        
+        let memory = 0;
+        return memory[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        var Array memory;
+
+        let memory = 0;
+        let memory[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+        var int segmentSize, address;
+        var Array segment, previousSegment, allocatedBlock;
+
+        // use first-fit to find large enough segment
+        let segment = freeList;
+        let allocatedBlock = null;
+        let previousSegment = null;
+
+        while (~(segment = null) & (allocatedBlock = null)) {
+            let segmentSize = segment[0];
+
+            if (segment[0] > size) {
+                let allocatedBlock = segment + 1;
+
+                // check if remaining segment is too small
+                // and update freeList
+                if ((segmentSize - size) < 3) {
+                    // remaining segment too small
+                    let size = segmentSize;
+                    let segment = segment[1];
+                } else {
+                    // remaining segment big enough
+                    let segment[0] = size + 1;
+                    let address = segment[1];
+                    let segment = segment + size + 1;
+                    let segment[0] = segmentSize - size - 1;
+                    let segment[1] = address;
+                }
+
+                if (previousSegment = null) {
+                    // no previous segment
+                    let freeList = segment;
+                } else {
+                    // previous segment exists
+                    let previousSegment[1] = segment;
+                }
+            }
+
+            let previousSegment = segment;
+            let segment = segment[1];
+        }
+
+        return allocatedBlock;
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var Array segment, currentSegment, previousSegment;
+
+        let segment = o - 1;
+        let currentSegment = freeList;
+        let previousSegment = null;
+
+        // find suitable segment to insert into
+        while (~(currentSegment = null) & (currentSegment < segment)) {
+            let previousSegment = currentSegment;
+            let currentSegment = currentSegment[1];
+        }
+
+        // check if there is a previous segment
+        if (previousSegment = null) {
+            let freeList = segment;
+        } else {
+            let previousSegment[1] = segment;
+        }
+
+        // check if there is a current segment
+        if (currentSegment = null) {
+            let segment[1] = null;
+        } else {
+            let segment[1] = currentSegment;
+        }
+
+        return;
+    }    
+}
